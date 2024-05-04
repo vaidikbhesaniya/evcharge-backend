@@ -68,7 +68,7 @@ export const registerUser = async (req, res) => {
             userName: userName,
         });
 
-        res.cookie("token", token);
+        await res.cookie("token", token);
         console.log(token);
         // Clear userDataId & email from cookies
 

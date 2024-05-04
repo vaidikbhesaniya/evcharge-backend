@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
     cors({
-        origin: "https://evcharge-theta.vercel.app",
+        origin: "*",
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     })

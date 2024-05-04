@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
     cors({
-        origin: "https://evcharge-theta.vercel.app",
+        origin: "http://localhost:5173",
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     })
@@ -25,7 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRouter);
 
 // Start the server
-const PORT = process.env.PORT || 8000;
+const PORT = 8000;
 
 mongoose
     .connect(process.env.MONGO_URI)

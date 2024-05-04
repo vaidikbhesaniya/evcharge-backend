@@ -59,7 +59,6 @@ export const registerUser = async (req, res) => {
         User.create({
             email: email,
             userName: userName,
-
             password: password,
         });
 

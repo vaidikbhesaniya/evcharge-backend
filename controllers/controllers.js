@@ -56,7 +56,7 @@ export const registerUser = async (req, res) => {
         // }
 
         // Create User
-        User.create({
+        await User.create({
             email: email,
             userName: userName,
             password: password,
@@ -71,7 +71,7 @@ export const registerUser = async (req, res) => {
         res.cookie("token", token);
         console.log(token);
         // Clear userDataId & email from cookies
-  
+
         // await UserData.deleteOne({ _id: userDataId });
         res.status(200).json({ message: "User registered successfully" });
     } catch (error) {

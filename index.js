@@ -5,7 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { userRouter } from "./routes/router.js";
-import "dotenv/config";
+
 dotenv.config();
 // Create an Express application
 const app = express();

@@ -5,7 +5,7 @@ import createServer from "http";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { userRouter } from "./routes/router.js";
-
+import "dotenv/config";
 dotenv.config();
 // Create an Express application
 const app = express();
@@ -16,11 +16,12 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(
     cors({
-        origin: "*",
+        origin: "https://evcharge-theta.vercel.app",
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     })
 );
+app.use(express.urlencoded({ extended: true }));
 app.use("/user", userRouter);
 
 // Start the server

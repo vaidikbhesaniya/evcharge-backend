@@ -2,7 +2,7 @@ import { compare, genSalt, hash } from "bcrypt";
 import { Request, Response } from "express";
 import { z } from "zod";
 import prisma from "../db/index.js";
-import { generateJWT } from "../lib/auth.js";
+import { generateJWT, verifyJWT } from "../lib/auth.js";
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -17,6 +17,11 @@ const loginSchema = z.object({
   password: z
     .string()
     .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()\-_=+{};:,<.>]).{8,}$/),
+});
+
+const addReviewSchema = z.object({
+  stationId: z.string(),
+  review: z.string(),
 });
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -100,6 +105,394 @@ export const loginUser = async (req: Request, res: Response) => {
     res.cookie("token", token);
 
     res.status(201).json({ message: "Login Successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const logoutUser = async (req: Request, res: Response) => {
+  res.clearCookie("token");
+  res.status(200).json({ message: "Logout Successfully" });
+};
+
+export const getUser = async (req: Request, res: Response) => {
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+      select: {
+        email: true,
+        userName: true,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    res.status(200).json({ user });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const addBookmark = async (req: Request, res: Response) => {
+  const { stationId } = req.body;
+  if (!stationId || typeof stationId !== "number") {
+    // Send Bad Request
+    return res.status(400).json({ message: "Invalid Station" });
+  }
+
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      // Send Unauthorized
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Add Bookmark
+    const addBookmarkTransaction = await prisma.$transaction(async (prisma) => {
+      const bookmark = await prisma.bookmark.create({
+        data: {
+          userId: user.id,
+          stationId,
+        },
+      });
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          bookmarks: {
+            connect: {
+              id: bookmark.id,
+            },
+          },
+        },
+      });
+
+      return bookmark.id;
+    });
+
+    if (typeof addBookmarkTransaction !== "number") {
+      return res.status(500).json({ message: "Failed to add bookmark" });
+    }
+
+    // Send Created
+    res.status(201).json({ message: "Bookmark Added" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const removeBookmark = async (req: Request, res: Response) => {
+  const { stationId } = req.body;
+  if (!stationId || typeof stationId !== "number") {
+    // Send Bad Request
+    return res.status(400).json({ message: "Invalid Station" });
+  }
+
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    // Send Unauthorized
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Remove Bookmark
+    const removeBookmarkTransaction = await prisma.$transaction(
+      async (prisma) => {
+        const bookmark = await prisma.bookmark.findFirst({
+          where: {
+            userId: user.id,
+            stationId,
+          },
+        });
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            bookmarks: {
+              disconnect: {
+                id: bookmark?.id,
+              },
+            },
+          },
+        });
+        await prisma.bookmark.delete({
+          where: {
+            id: bookmark?.id,
+          },
+        });
+
+        return bookmark?.id;
+      }
+    );
+
+    if (typeof removeBookmarkTransaction !== "number") {
+      return res.status(500).json({ message: "Failed to remove bookmark" });
+    }
+
+    // Send Deleted
+    res.status(200).json({ message: "Bookmark Removed" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getBookmarks = async (req: Request, res: Response) => {
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Get Bookmarks
+    const bookmarks = await prisma.bookmark.findMany({
+      where: {
+        userId: user.id,
+      },
+    });
+    if (!bookmarks) {
+      return res.status(500).json({ message: "Failed to get bookmarks" });
+    }
+
+    // Send OK
+    res.status(200).json({ bookmarks });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const addReview = async (req: Request, res: Response) => {
+  const { stationId, review } = req.body;
+
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    // Send Unauthorized
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Add Review
+    const addReviewTransaction = await prisma.$transaction(async (prisma) => {
+      // Create Review
+      const reviewData = await prisma.review.create({
+        data: {
+          userId: user.id,
+          stationId,
+          review,
+        },
+      });
+      // Update Station
+      await prisma.station.update({
+        where: {
+          id: stationId,
+        },
+        data: {
+          reviews: {
+            connect: {
+              id: reviewData.id,
+            },
+          },
+        },
+      });
+      // Update User
+      await prisma.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          reviews: {
+            connect: {
+              id: reviewData.id,
+            },
+          },
+        },
+      });
+
+      return reviewData.id;
+    });
+
+    if (typeof addReviewTransaction !== "number") {
+      return res.status(500).json({ message: "Failed to add review" });
+    }
+    res.status(200).json({ message: "Review Added" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const removeReview = async (req: Request, res: Response) => {
+  const { stationId, reviewId } = req.body;
+  if (!stationId || typeof stationId !== "number") {
+    // Send Bad Request
+    return res.status(400).json({ message: "Invalid Station" });
+  }
+
+  // Get Token from Cookies
+  const token = req.cookies["token"];
+  if (!token) {
+    // Send Unauthorized
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    // Decode Token
+    const decodedUser = verifyJWT(token);
+    if (!decodedUser || typeof decodedUser !== "object") {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    // Check if User Exist
+    const user = await prisma.user.findUnique({
+      where: {
+        email: decodedUser.email,
+      },
+    });
+    if (!user) {
+      // Send Not Found
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    // Remove Review
+    const removeReviewTransaction = await prisma.$transaction(
+      async (prisma) => {
+        // Delete Review
+        await prisma.review.delete({
+          where: {
+            id: reviewId,
+          },
+        });
+        // Update Station
+        await prisma.station.update({
+          where: {
+            id: stationId,
+          },
+          data: {
+            reviews: {
+              disconnect: {
+                id: reviewId,
+              },
+            },
+          },
+        });
+        // Update User
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            reviews: {
+              disconnect: {
+                id: reviewId,
+              },
+            },
+          },
+        });
+
+        return reviewId;
+      }
+    );
+
+    if (typeof removeReviewTransaction !== "number") {
+      return res.status(500).json({ message: "Failed to remove review" });
+    }
+    // Send OK
+    res.status(200).json({ message: "Review Removed" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });

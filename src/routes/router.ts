@@ -1,7 +1,31 @@
 import { Router } from "express";
-import { loginUser, registerUser } from "../controllers/controller.js";
-const userRouter: Router = Router();
+import {
+  addBookmark,
+  addReview,
+  getBookmarks,
+  getUser,
+  loginUser,
+  logoutUser,
+  registerUser,
+  removeBookmark,
+  removeReview,
+} from "../controllers/controller.js";
 
-userRouter.post("/register", registerUser).post("/login", loginUser);
+// Routers
+const router: Router = Router();
 
-export { userRouter };
+router
+  // User
+  .get("/user", getUser)
+  .post("/user/register", registerUser)
+  .post("/user/login", loginUser)
+  .post("/user/logout", logoutUser)
+  // Bookmark
+  .get("/bookmarks", getBookmarks)
+  .post("/bookmark/add", addBookmark)
+  .delete("/bookmark/remove", removeBookmark)
+  // Review
+  .post("/review/add", addReview)
+  .delete("/review/delete", removeReview)
+
+export { router };

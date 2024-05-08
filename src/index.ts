@@ -1,9 +1,8 @@
-import express, { Request, Response } from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 import "dotenv/config";
-import path from "path";
-import { userRouter } from "./routes/router.js";
+import express, { Request, Response } from "express";
+import { router } from "./routes/router.js";
 
 const app = express();
 
@@ -20,8 +19,8 @@ app.use(
 );
 
 //Routes
-app.use("/user", userRouter);
-app.use("/health", (req: Request, res: Response) => {
+app.use("/api/v1", router);
+app.use("/api/v1/health", (req: Request, res: Response) => {
   res.status(200).json({ message: "Server is running" });
 });
 

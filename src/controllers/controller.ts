@@ -5,7 +5,7 @@ import prisma from "../db/index.js";
 import { UploadApiResponse } from "cloudinary";
 import cloudinary from "../utils/cloudinary.js";
 import { generateJWT, verifyJWT } from "../lib/auth.js";
-import station_data from "./data.js";
+// import station_data from "./data.js";
 
 const registerSchema = z.object({
     email: z.string().email(),

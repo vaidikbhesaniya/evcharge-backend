@@ -65,7 +65,11 @@ export const registerUser = async (req: Request, res: Response) => {
 
         // Set Token in the Cookies
         const token = generateJWT({ email, userName });
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        });
 
         // Send Created
         res.status(201).json({ message: "User Created Successfully" });
@@ -105,7 +109,11 @@ export const loginUser = async (req: Request, res: Response) => {
 
         // Set Token in the Cookies
         const token = generateJWT({ email, userName: user.userName });
-        res.cookie("token", token);
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        });
 
         res.status(201).json({ message: "Login Successfully" });
     } catch (error) {
@@ -510,21 +518,21 @@ export const removeReview = async (req: Request, res: Response) => {
     }
 };
 
-export const getStations = async (req: Request, res: Response) => {
-    try {
-        // Fetch gas station data from the database
-        const stations = await prisma.station.findMany();
+// export const getStations = async (req: Request, res: Response) => {
+//     try {
+//         // Fetch gas station data from the database
+//         const stations = await prisma.station.findMany();
 
-        // Send the retrieved data as JSON response
-        res.json(stations);
-    } catch (error) {
-        // If an error occurs, send an error response
-        console.error("Error fetching gas stations:", error);
-        res.status(500).json({
-            error: "An error occurred while fetching gas stations.",
-        });
-    }
-};
+//         // Send the retrieved data as JSON response
+//         res.json(stations);
+//     } catch (error) {
+//         // If an error occurs, send an error response
+//         console.error("Error fetching gas stations:", error);
+//         res.status(500).json({
+//             error: "An error occurred while fetching gas stations.",
+//         });
+//     }
+// };
 
 export const updateUser = async (req: Request, res: Response) => {
     // Get Token from Cookies
@@ -608,7 +616,11 @@ export const updateUser = async (req: Request, res: Response) => {
             email: updatedUser.email,
             userName: updatedUser.userName,
         });
-        res.cookie("token", newToken);
+        res.cookie("token", newToken, {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none",
+        });
 
         res.status(200).json({ message: "user updated" });
     } catch (error) {

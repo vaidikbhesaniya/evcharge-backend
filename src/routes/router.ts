@@ -10,7 +10,6 @@ import {
     registerUser,
     removeBookmark,
     removeReview,
-    getStations,
     updateUser,
 } from "../controllers/controller.js";
 
@@ -30,8 +29,8 @@ router
     .delete("/bookmark/remove", removeBookmark)
     // Review
     .post("/review/add", addReview)
-    .delete("/review/delete", removeReview)
-    .get("/stations", getStations);
+    .delete("/review/delete", removeReview);
+// .get("/stations", getStations);
 //station
 
 export { router };

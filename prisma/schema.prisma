@@ -17,18 +17,10 @@ model User {
   profilePicture String?
   publicId       String?
 
-  createdAt      DateTime     @default(now())
-  location       UserLocation @relation(fields: [userLocationId], references: [id])
-  reviews        Review[]
-  bookmarks      Bookmark[]
-  userLocationId Int
-}
+  createdAt DateTime @default(now())
 
-model UserLocation {
-  id   Int    @id @default(autoincrement())
-  lat  Float?
-  log  Float?
-  User User[]
+  reviews   Review[]
+  bookmarks Bookmark[]
 }
 
 model Station {

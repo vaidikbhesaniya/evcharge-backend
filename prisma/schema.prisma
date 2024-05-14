@@ -24,16 +24,26 @@ model User {
 }
 
 model Station {
-  id             Int        @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   stationName    String
   stationAddress String
   latitude       Float
   longitude      Float
   category       String
   rating         Float?
-  contact        String?
-  reviews        Review[]
-  bookmarks      Bookmark[]
+  state          String?
+  city           String?
+  country        String?
+  stationPhone   String?
+  cardsaccepted  String?
+  EVConnectorTypes String?
+  opendate       String?
+  zipcode        String?
+  website        String?
+  openTime       String?
+  contact   String?
+  reviews   Review[]
+  bookmarks Bookmark[]
 }
 
 // enum Category {

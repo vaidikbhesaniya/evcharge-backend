@@ -69,6 +69,7 @@ export const registerUser = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: true,
             sameSite: "none",
+            path: "/",
         });
 
         // Send Created
@@ -113,6 +114,7 @@ export const loginUser = async (req: Request, res: Response) => {
             httpOnly: true,
             secure: true,
             sameSite: "none",
+            path: "/",
         });
 
         res.status(201).json({ message: "Login Successfully" });
@@ -123,7 +125,12 @@ export const loginUser = async (req: Request, res: Response) => {
 };
 
 export const logoutUser = async (req: Request, res: Response) => {
-    res.clearCookie("token");
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        path: "/",
+    });
     res.status(200).json({ message: "Logout Successfully" });
 };
 

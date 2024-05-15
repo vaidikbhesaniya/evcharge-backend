@@ -128,6 +128,15 @@ app.get("/station/:offset", async (req, res) => {
         console.log(error);
     }
 });
+
+app.get("/stationall", async (req, res) => {
+    try {
+        const count = await prisma.station.findMany();
+        res.status(200).json(count);
+    } catch (error) {
+        console.log(error);
+    }
+});
 //Routes
 app.use("/api/v1", router);
 app.use("/api/v1/health", (req: Request, res: Response) => {

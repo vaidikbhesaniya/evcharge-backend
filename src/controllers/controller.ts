@@ -5,6 +5,7 @@ import prisma from "../db/index.js";
 import { UploadApiResponse } from "cloudinary";
 import cloudinary from "../utils/cloudinary.js";
 import { generateJWT, verifyJWT } from "../lib/auth.js";
+import { formatDistanceToNow } from "date-fns";
 // import station_data from "./data.js";
 
 const registerSchema = z.object({
@@ -242,12 +243,72 @@ export const addBookmark = async (req: Request, res: Response) => {
     }
 };
 
+export const getReview = async (req: Request, res: Response) => {
+    const { stationId } = req.body;
+
+    // if (!stationId || isNaN(Number(stationId))) {
+    //     return res.status(400).json({ message: "Invalid Station ID" });
+    // }
+
+    const token = req.cookies["token"];
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+        const decodedUser = verifyJWT(token);
+        if (!decodedUser || typeof decodedUser !== "object") {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: decodedUser.email,
+            },
+        });
+        if (!user) {
+            return res.status(404).json({ message: "User Not Found" });
+        }
+
+        const reviews = await prisma.review.findMany({
+            where: {
+                stationId: parseInt(stationId),
+            },
+            include: {
+                User: {
+                    select: {
+                        userName: true,
+                        email: true,
+                        profilePicture: true,
+                    },
+                },
+                Station: {
+                    select: {
+                        stationName: true,
+                    },
+                },
+            },
+        });
+
+        const reviewsWithTimeAgo = reviews.map((review) => ({
+            ...review,
+            timeAgo: formatDistanceToNow(new Date(review.createdAt), {
+                addSuffix: true,
+            }),
+        }));
+
+        res.status(200).json(reviewsWithTimeAgo);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 export const removeBookmark = async (req: Request, res: Response) => {
     const { stationId } = req.body;
-    if (!stationId || typeof stationId !== "number") {
-        // Send Bad Request
-        return res.status(400).json({ message: "Invalid Station" });
-    }
+    // if (!stationId || typeof stationId !== "number") {
+    //     // Send Bad Request
+    //     return res.status(400).json({ message: "Invalid Station" });
+    // }
 
     // Get Token from Cookies
     const token = req.cookies["token"];
@@ -274,42 +335,26 @@ export const removeBookmark = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User Not Found" });
         }
 
-        // Remove Bookmark
-        const removeBookmarkTransaction = await prisma.$transaction(
-            async (prisma) => {
-                const bookmark = await prisma.bookmark.findFirst({
-                    where: {
-                        userId: user.id,
-                        stationId,
-                    },
-                });
-                await prisma.user.update({
-                    where: {
-                        id: user.id,
-                    },
-                    data: {
-                        bookmarks: {
-                            disconnect: {
-                                id: bookmark?.id,
-                            },
-                        },
-                    },
-                });
-                await prisma.bookmark.delete({
-                    where: {
-                        id: bookmark?.id,
-                    },
-                });
-
-                return bookmark?.id;
-            }
-        );
-
-        if (typeof removeBookmarkTransaction !== "number") {
-            return res
-                .status(500)
-                .json({ message: "Failed to remove bookmark" });
+        // Find the Bookmark
+        const bookmark = await prisma.bookmark.findFirst({
+            where: {
+                userId: user.id,
+                stationId: stationId,
+            },
+        });
+        console.log("====================================");
+        console.log(bookmark, user.id);
+        console.log("====================================");
+        if (!bookmark) {
+            return res.status(404).json({ message: "Bookmark Not Found" });
         }
+
+        // Remove Bookmark
+        await prisma.bookmark.delete({
+            where: {
+                id: bookmark.id,
+            },
+        });
 
         // Send Deleted
         res.status(200).json({ message: "Bookmark Removed" });
@@ -354,8 +399,17 @@ export const getBookmarks = async (req: Request, res: Response) => {
             return res.status(500).json({ message: "Failed to get bookmarks" });
         }
 
+        const stationIds = bookmarks.map((bookmark) => bookmark.stationId);
+
+        // Fetch Station Details
+        const stations = await prisma.station.findMany({
+            where: {
+                id: { in: stationIds },
+            },
+        });
+
         // Send OK
-        res.status(200).json({ bookmarks });
+        res.status(200).json({ stations });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });

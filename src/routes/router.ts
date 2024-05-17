@@ -4,6 +4,7 @@ import {
     addBookmark,
     addReview,
     getBookmarks,
+    getReview,
     getUser,
     loginUser,
     logoutUser,
@@ -29,6 +30,7 @@ router
     .delete("/bookmark/remove", removeBookmark)
     // Review
     .post("/review/add", addReview)
+    .get("/reviews", getReview)
     .delete("/review/delete", removeReview);
 // .get("/stations", getStations);
 //station

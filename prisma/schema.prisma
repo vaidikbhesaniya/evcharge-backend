@@ -59,6 +59,8 @@ model Review {
   User      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int?
   stationId Int?
+  
+  createdAt DateTime @default(now())
 }
 
 model Bookmark {

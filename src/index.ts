@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(
     cors({
-        origin: ["https://evcharge-omega.vercel.app", "http://localhost:5173"],
+        origin: ["https://evpointer.vercel.app/", "http://localhost:5173"],
         methods: ["GET", "POST", "PUT", "DELETE"],
         credentials: true,
     })

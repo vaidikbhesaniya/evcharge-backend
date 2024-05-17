@@ -30,8 +30,8 @@ router
     .delete("/bookmark/remove", removeBookmark)
     // Review
     .post("/review/add", addReview)
-    .get("/reviews", getReview)
-    .delete("/review/delete", removeReview);
+    .post("/reviews", getReview)
+    .post("/review/delete", removeReview);
 // .get("/stations", getStations);
 //station
 

@@ -155,6 +155,7 @@ export const getUser = async (req: Request, res: Response) => {
                 email: decodedUser.email,
             },
             select: {
+                id: true,
                 email: true,
                 userName: true,
                 phoneno: true,
@@ -245,6 +246,7 @@ export const addBookmark = async (req: Request, res: Response) => {
 
 export const getReview = async (req: Request, res: Response) => {
     const { stationId } = req.body;
+    console.log(typeof stationId);
 
     // if (!stationId || isNaN(Number(stationId))) {
     //     return res.status(400).json({ message: "Invalid Station ID" });
@@ -269,14 +271,16 @@ export const getReview = async (req: Request, res: Response) => {
         if (!user) {
             return res.status(404).json({ message: "User Not Found" });
         }
+        // console.log(user);
 
         const reviews = await prisma.review.findMany({
             where: {
-                stationId: parseInt(stationId),
+                stationId: stationId,
             },
             include: {
                 User: {
                     select: {
+                        id: true,
                         userName: true,
                         email: true,
                         profilePicture: true,
@@ -417,12 +421,23 @@ export const getBookmarks = async (req: Request, res: Response) => {
 };
 
 export const addReview = async (req: Request, res: Response) => {
-    const { stationId, review } = req.body;
+    const { stationId, reviewText } = req.body;
+
+    // if (
+    //     !stationId ||
+    //     typeof stationId !== "number" ||
+    //     !reviewText ||
+    //     typeof reviewText !== "string"
+    // ) {
+    //     // Send Bad Request
+    //     return res
+    //         .status(400)
+    //         .json({ message: "Invalid Station ID or Review Text" });
+    // }
 
     // Get Token from Cookies
     const token = req.cookies["token"];
     if (!token) {
-        // Send Unauthorized
         return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -430,66 +445,56 @@ export const addReview = async (req: Request, res: Response) => {
         // Decode Token
         const decodedUser = verifyJWT(token);
         if (!decodedUser || typeof decodedUser !== "object") {
+            // Send Unauthorized
             return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // Check if User Exist
+        // Check if User Exists
         const user = await prisma.user.findUnique({
             where: {
                 email: decodedUser.email,
             },
         });
         if (!user) {
-            // Send Not Found
             return res.status(404).json({ message: "User Not Found" });
         }
 
-        // Add Review
-        const addReviewTransaction = await prisma.$transaction(
-            async (prisma) => {
-                // Create Review
-                const reviewData = await prisma.review.create({
-                    data: {
-                        userId: user.id,
-                        stationId,
-                        review,
-                    },
-                });
-                // Update Station
-                await prisma.station.update({
-                    where: {
-                        id: stationId,
-                    },
-                    data: {
-                        reviews: {
-                            connect: {
-                                id: reviewData.id,
-                            },
-                        },
-                    },
-                });
-                // Update User
-                await prisma.user.update({
-                    where: {
-                        id: user.id,
-                    },
-                    data: {
-                        reviews: {
-                            connect: {
-                                id: reviewData.id,
-                            },
-                        },
-                    },
-                });
+        // Check if the user has already reviewed this station
+        const existingReview = await prisma.review.findFirst({
+            where: {
+                userId: user.id,
+                stationId: stationId,
+            },
+        });
 
-                return reviewData.id;
-            }
-        );
+        if (existingReview) {
+            // Update the existing review
+            const updatedReview = await prisma.review.update({
+                where: {
+                    id: existingReview.id,
+                },
+                data: {
+                    review: reviewText,
+                },
+            });
 
-        if (typeof addReviewTransaction !== "number") {
-            return res.status(500).json({ message: "Failed to add review" });
+            return res
+                .status(200)
+                .json({ message: "Review Updated", review: updatedReview });
+        } else {
+            // Add a new review
+            const newReview = await prisma.review.create({
+                data: {
+                    userId: user.id,
+                    stationId,
+                    review: reviewText,
+                },
+            });
+
+            return res
+                .status(201)
+                .json({ message: "Review Added", review: newReview });
         }
-        res.status(200).json({ message: "Review Added" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
@@ -497,16 +502,16 @@ export const addReview = async (req: Request, res: Response) => {
 };
 
 export const removeReview = async (req: Request, res: Response) => {
-    const { stationId, reviewId } = req.body;
-    if (!stationId || typeof stationId !== "number") {
-        // Send Bad Request
-        return res.status(400).json({ message: "Invalid Station" });
-    }
+    const { reviewId } = req.body;
+
+    // if (!reviewId || typeof reviewId !== "number") {
+    //     // Send Bad Request
+    //     return res.status(400).json({ message: "Invalid Review ID" });
+    // }
 
     // Get Token from Cookies
     const token = req.cookies["token"];
     if (!token) {
-        // Send Unauthorized
         return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -514,6 +519,7 @@ export const removeReview = async (req: Request, res: Response) => {
         // Decode Token
         const decodedUser = verifyJWT(token);
         if (!decodedUser || typeof decodedUser !== "object") {
+            // Send Unauthorized
             return res.status(401).json({ message: "Unauthorized" });
         }
 
@@ -528,50 +534,33 @@ export const removeReview = async (req: Request, res: Response) => {
             return res.status(404).json({ message: "User Not Found" });
         }
 
-        // Remove Review
-        const removeReviewTransaction = await prisma.$transaction(
-            async (prisma) => {
-                // Delete Review
-                await prisma.review.delete({
-                    where: {
-                        id: reviewId,
-                    },
-                });
-                // Update Station
-                await prisma.station.update({
-                    where: {
-                        id: stationId,
-                    },
-                    data: {
-                        reviews: {
-                            disconnect: {
-                                id: reviewId,
-                            },
-                        },
-                    },
-                });
-                // Update User
-                await prisma.user.update({
-                    where: {
-                        id: user.id,
-                    },
-                    data: {
-                        reviews: {
-                            disconnect: {
-                                id: reviewId,
-                            },
-                        },
-                    },
-                });
+        // Check if the review exists and belongs to the user
+        const review = await prisma.review.findUnique({
+            where: {
+                id: reviewId,
+                userId: user.id,
+            },
+        });
 
-                return reviewId;
-            }
-        );
-
-        if (typeof removeReviewTransaction !== "number") {
-            return res.status(500).json({ message: "Failed to remove review" });
+        if (!review) {
+            return res.status(404).json({ message: "Review Not Found" });
         }
-        // Send OK
+
+        if (review.userId !== user.id) {
+            return res.status(403).json({
+                message: "Forbidden: You can only delete your own reviews",
+            });
+        }
+
+        // Remove Review
+        await prisma.review.delete({
+            where: {
+                id: reviewId,
+                userId: user.id,
+            },
+        });
+
+        // Send Success Response
         res.status(200).json({ message: "Review Removed" });
     } catch (error) {
         console.error(error);

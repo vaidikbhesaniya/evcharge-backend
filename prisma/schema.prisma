@@ -10,7 +10,7 @@ datasource db {
 // CUID = Collision-resistent Unique IDentifier
 model User {
   id             Int     @id @default(autoincrement())
-  userName       String  @unique
+  userName       String
   email          String  @unique
   phoneno        String? @unique
   password       String
@@ -24,26 +24,26 @@ model User {
 }
 
 model Station {
-  id             Int     @id @default(autoincrement())
-  stationName    String
-  stationAddress String
-  latitude       Float
-  longitude      Float
-  category       String
-  rating         Float?
-  state          String?
-  city           String?
-  country        String?
-  stationPhone   String?
-  cardsaccepted  String?
+  id               Int        @id @default(autoincrement())
+  stationName      String
+  stationAddress   String
+  latitude         Float
+  longitude        Float
+  category         String
+  rating           Float?
+  state            String?
+  city             String?
+  country          String?
+  stationPhone     String?
+  cardsaccepted    String?
   EVConnectorTypes String?
-  opendate       String?
-  zipcode        String?
-  website        String?
-  openTime       String?
-  contact   String?
-  reviews   Review[]
-  bookmarks Bookmark[]
+  opendate         String?
+  zipcode          String?
+  website          String?
+  openTime         String?
+  contact          String?
+  reviews          Review[]
+  bookmarks        Bookmark[]
 }
 
 // enum Category {
@@ -59,7 +59,7 @@ model Review {
   User      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int?
   stationId Int?
-  
+
   createdAt DateTime @default(now())
 }
 

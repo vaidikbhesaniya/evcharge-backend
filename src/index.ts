@@ -112,6 +112,55 @@ app.use(
 // }
 
 // retrieveDataInChunks();
+
+// async function removeDuplicateStations() {
+//     try {
+//         const stations = await prisma.station.findMany();
+//         const uniqueStations: typeof stations = [];
+//         const seenCoordinates = new Set();
+
+//         stations.forEach((station) => {
+//             const { latitude, longitude } = station;
+//             const coordKey = `${latitude},${longitude}`;
+
+//             if (!seenCoordinates.has(coordKey)) {
+//                 seenCoordinates.add(coordKey);
+//                 uniqueStations.push(station);
+//             }
+//         });
+
+//         // Clear the station table and insert unique stations
+//         await prisma.station.deleteMany();
+//         await prisma.station.createMany({
+//             data: uniqueStations.map((station) => ({
+//                 stationName: station.stationName,
+//                 stationAddress: station.stationAddress,
+//                 latitude: station.latitude,
+//                 longitude: station.longitude,
+//                 category: station.category,
+//                 rating: station.rating,
+//                 state: station.state,
+//                 city: station.city,
+//                 country: station.country,
+//                 stationPhone: station.stationPhone,
+//                 cardsaccepted: station.cardsaccepted,
+//                 EVConnectorTypes: station.EVConnectorTypes,
+//                 opendate: station.opendate,
+//                 zipcode: station.zipcode,
+//                 website: station.website,
+//                 openTime: station.openTime,
+//             })),
+//         });
+
+//         console.log("Duplicate stations removed successfully.");
+//     } catch (error) {
+//         console.error("Error removing duplicate stations:", error);
+//     } finally {
+//         await prisma.$disconnect();
+//     }
+// }
+// removeDuplicateStations();
+
 app.get("/station/:offset", async (req, res) => {
     try {
         let offset = parseInt(req.params.offset, 10);

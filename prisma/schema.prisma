@@ -33,6 +33,7 @@ model Station {
   rating           Float?
   state            String?
   city             String?
+  type             String
   country          String?
   stationPhone     String?
   cardsaccepted    String?

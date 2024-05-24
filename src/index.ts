@@ -23,8 +23,8 @@ app.use(
 
 // async function seedData() {
 //     const gasStations = station_data;
-//     const batchsize = 2000;
-//     const tatoal_tupples = 80000;
+//     const batchsize = 7;
+//     const tatoal_tupples = 770;
 
 //     try {
 //         for (let i = 0; i < tatoal_tupples; i += batchsize) {
@@ -36,13 +36,14 @@ app.use(
 //                     stationAddress: station_data[j].Station_address,
 //                     latitude: parseFloat(station_data[j].Latitude),
 //                     longitude: parseFloat(station_data[j].Longitude),
-//                     category: "Ev",
-//                     rating: "",
+//                     category: "cng",
+//                     rating: 0,
+//                     type: "cng",
 //                     state: station_data[j]?.State || "",
 //                     city: station_data[j]?.City || "",
 //                     country: station_data[j]?.Country || "",
-//                     stationphone: station_data[j].Station_Phone,
-//                     cardaccepted: station_data[j].Cards_Accepted || "",
+//                     stationPhone: station_data[j].Station_Phone,
+//                     cardsaccepted: station_data[j].Cards_Accepted || "",
 //                     EVConnectorTypes: station_data[j].EV_Connector_Types,
 //                     opendate: station_data[j].Open_Date,
 //                     zipcode: station_data[j].ZIP,
@@ -66,6 +67,42 @@ app.use(
 //         await prisma.$disconnect();
 //     }
 // }
+// seedData();
+
+// async function seedData() {
+//     const gasStations = station_data;
+
+//     try {
+//         await prisma.station.createMany({
+//             data: station_data.map((station_data) => ({
+//                 stationName: station_data.Station_Name,
+//                 stationAddress: station_data.Station_address,
+//                 latitude: parseFloat(station_data.Latitude),
+//                 longitude: parseFloat(station_data.Longitude),
+//                 category: "cng",
+//                 rating: 0,
+//                 type: "cng",
+//                 state: station_data?.State || "",
+//                 city: station_data?.City || "",
+//                 country: station_data?.Country || "",
+//                 stationPhone: station_data.Station_Phone,
+//                 cardsaccepted: station_data.Cards_Accepted || "",
+//                 EVConnectorTypes: station_data.EV_Connector_Types,
+//                 opendate: station_data.Open_Date,
+//                 zipcode: station_data.ZIP,
+//                 website: station_data.EV_Network_Web,
+//                 openTime: station_data.Access_Days_Time,
+//             })),
+//             // skipDuplicates: true,
+//         });
+//         console.log("Data seeded successfully.");
+//     } catch (error) {
+//         console.error("Error seeding data:", error);
+//     } finally {
+//         await prisma.$disconnect();
+//     }
+// }
+// seedData();
 
 // async function seedData() {
 //     // const gasStations = station_data;
@@ -111,6 +148,23 @@ app.use(
 //     }
 // }
 
+// async function updateAllStationTypes() {
+//     try {
+//         const result = await prisma.station.updateMany({
+//             data: {
+//                 type: "ev",
+//             },
+//         });
+//         console.log(`${result.count} stations were updated.`);
+//     } catch (error) {
+//         console.error("Error updating station types:", error);
+//     } finally {
+//         await prisma.$disconnect();
+//     }
+// }
+
+// updateAllStationTypes();
+
 // retrieveDataInChunks();
 
 // async function removeDuplicateStations() {
@@ -138,6 +192,7 @@ app.use(
 //                 latitude: station.latitude,
 //                 longitude: station.longitude,
 //                 category: station.category,
+//                 type: station.type,
 //                 rating: station.rating,
 //                 state: station.state,
 //                 city: station.city,

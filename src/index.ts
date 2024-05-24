@@ -1,15 +1,60 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import "dotenv/config";
+import http from "http";
 import express, { Request, Response } from "express";
 import { router } from "./routes/router.js";
+import { Server } from "socket.io";
 
 import prisma from "./db/index.js";
 // import station_data from "./controllers/export.js";
 
 const app = express();
+const server = http.createServer(app);
 
-// Middleware
+const io = new Server(server, {
+    cors: {
+        origin: ["https://evpointer.vercel.app", "http://localhost:5173"],
+        methods: ["GET", "POST"],
+        credentials: true,
+    },
+});
+//
+
+interface SocketIdToEmailMap {
+    [key: string]: string;
+}
+
+const socketIdToEmailMap: SocketIdToEmailMap = {};
+
+io.on("connection", (socket) => {
+    console.log("A user connected");
+
+    // When a user sends their email
+    socket.on("user email", (email) => {
+        console.log(`Received email ${email} from socket ${socket.id}`);
+        socketIdToEmailMap[socket.id] = email;
+
+        // Emit the socket ID and email back to the client
+        io.to(socket.id).emit("socketId", { email, socketId: socket.id });
+    });
+
+    // When a user disconnects
+    socket.on("disconnect", () => {
+        console.log(`User ${socketIdToEmailMap[socket.id]} disconnected`);
+        delete socketIdToEmailMap[socket.id];
+    });
+
+    // When a user sends a message
+    socket.on("chat message", (data) => {
+        const email = socketIdToEmailMap[socket.id];
+        console.log(`Message from ${email}: ${data.message}`);
+
+        // Broadcast the message to all connected clients
+        io.emit("chat message", { email, message: data.message });
+    });
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -248,6 +293,6 @@ app.use("/api/v1/health", (req: Request, res: Response) => {
 });
 
 const PORT = Number(process.env.PORT) || 8080;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });

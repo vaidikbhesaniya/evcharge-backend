@@ -4,6 +4,7 @@ import {
     addBookmark,
     addReview,
     getBookmarks,
+    getStations,
     getReview,
     getUser,
     loginUser,
@@ -31,8 +32,8 @@ router
     // Review
     .post("/review/add", addReview)
     .post("/reviews", getReview)
-    .post("/review/delete", removeReview);
-// .get("/stations", getStations);
+    .post("/review/delete", removeReview)
+.get("/stations", getStations);
 //station
 
 export { router };

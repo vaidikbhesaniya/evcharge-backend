@@ -568,21 +568,21 @@ export const removeReview = async (req: Request, res: Response) => {
     }
 };
 
-// export const getStations = async (req: Request, res: Response) => {
-//     try {
-//         // Fetch gas station data from the database
-//         const stations = await prisma.station.findMany();
+export const getStations = async (req: Request, res: Response) => {
+    try {
+        // Fetch gas station data from the database
+        const stations = await prisma.station.findMany();
 
-//         // Send the retrieved data as JSON response
-//         res.json(stations);
-//     } catch (error) {
-//         // If an error occurs, send an error response
-//         console.error("Error fetching gas stations:", error);
-//         res.status(500).json({
-//             error: "An error occurred while fetching gas stations.",
-//         });
-//     }
-// };
+        // Send the retrieved data as JSON response
+        res.json(stations);
+    } catch (error) {
+        // If an error occurs, send an error response
+        console.error("Error fetching gas stations:", error);
+        res.status(500).json({
+            error: "An error occurred while fetching gas stations.",
+        });
+    }
+};
 
 export const updateUser = async (req: Request, res: Response) => {
     // Get Token from Cookies

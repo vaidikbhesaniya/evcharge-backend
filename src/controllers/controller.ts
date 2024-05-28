@@ -118,7 +118,7 @@ export const loginUser = async (req: Request, res: Response) => {
             path: "/",
         });
 
-        res.status(201).json({ message: "Login Successfully" });
+        res.status(201).json({ token, message: "Login Successfully" });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Internal server error" });

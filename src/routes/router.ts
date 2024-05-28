@@ -11,6 +11,7 @@ import {
     logoutUser,
     registerUser,
     removeBookmark,
+    getTokenUser,
     removeReview,
     updateUser,
 } from "../controllers/controller.js";
@@ -21,6 +22,7 @@ const router: Router = Router();
 router
     // User
     .get("/user", getUser)
+    .get("/user/token", getTokenUser)
     .post("/user/register", registerUser)
     .put("/user/update", upload.single("profilePicture"), updateUser)
     .post("/user/login", loginUser)
@@ -33,7 +35,7 @@ router
     .post("/review/add", addReview)
     .post("/reviews", getReview)
     .post("/review/delete", removeReview)
-.get("/stations", getStations);
+    .get("/stations", getStations);
 //station
 
 export { router };

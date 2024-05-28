@@ -174,6 +174,44 @@ export const getUser = async (req: Request, res: Response) => {
     }
 };
 
+export const getTokenUser = async (req: Request, res: Response) => {
+    // Get Token from Cookies
+    const { token } = req.body;
+    if (!token) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+        // Decode Token
+        const decodedUser = verifyJWT(token);
+        if (!decodedUser || typeof decodedUser !== "object") {
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        // Check if User Exist
+        const user = await prisma.user.findUnique({
+            where: {
+                email: decodedUser.email,
+            },
+            select: {
+                id: true,
+                email: true,
+                userName: true,
+                phoneno: true,
+                profilePicture: true,
+            },
+        });
+        if (!user) {
+            // Send Not Found
+            return res.status(404).json({ message: "User Not Found" });
+        }
+
+        res.status(200).json({ user });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 export const addBookmark = async (req: Request, res: Response) => {
     const { stationId } = req.body;
     if (!stationId || typeof stationId !== "number") {

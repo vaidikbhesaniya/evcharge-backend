@@ -7,20 +7,25 @@ import cloudinary from "../utils/cloudinary.js";
 import { generateJWT, verifyJWT } from "../lib/auth.js";
 import { formatDistanceToNow } from "date-fns";
 // import station_data from "./data.js";
-
 const registerSchema = z.object({
     email: z.string().email(),
     userName: z.string(),
     password: z
         .string()
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()\-_=+{};:,<.>]).{8,}$/),
+        .regex(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()\-_=+{};:,<.>]).{8,}$/,
+            "Password must contain at least one lowercase letter, one uppercase letter, one special character, and be at least 8 characters long."
+        ),
 });
 
 const loginSchema = z.object({
     email: z.string().email(),
     password: z
         .string()
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()\-_=+{};:,<.>]).{8,}$/),
+        .regex(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*()\-_=+{};:,<.>]).{8,}$/,
+            "Invalide Password"
+        ),
 });
 
 const addReviewSchema = z.object({
@@ -29,17 +34,12 @@ const addReviewSchema = z.object({
 });
 
 export const registerUser = async (req: Request, res: Response) => {
-    // Validate Request
-    const validateData = registerSchema.parse(req.body);
-    const { email, userName, password } = validateData;
-
-    if (!email || !userName || !password) {
-        // Send Bad Request
-        return res.status(400).json({ message: "Invalid Credentials" });
-    }
-
     try {
-        // Check if User Exist
+        // Validate Request
+        const validateData = registerSchema.parse(req.body);
+        const { email, userName, password } = validateData;
+
+        // Check if User Exists
         const userExists = await prisma.user.findUnique({
             where: {
                 email,
@@ -47,7 +47,7 @@ export const registerUser = async (req: Request, res: Response) => {
         });
         if (userExists) {
             // Send Conflict
-            return res.status(409).json({ message: "User Already Exist" });
+            return res.status(409).json({ message: "User already exists" });
         }
 
         // Create User
@@ -61,10 +61,10 @@ export const registerUser = async (req: Request, res: Response) => {
         if (!user) {
             return res
                 .status(500)
-                .json({ message: "User Creation Failed Unexpectedly" });
+                .json({ message: "User creation failed unexpectedly" });
         }
 
-        // Set Token in the Cookies
+        // Set Token in Cookies
         const token = generateJWT({ email, userName });
         res.cookie("token", token, {
             httpOnly: true,
@@ -74,25 +74,24 @@ export const registerUser = async (req: Request, res: Response) => {
         });
 
         // Send Created
-        res.status(201).json({ message: "User Created Successfully" });
+        res.status(201).json({ message: "User created successfully" });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ message: error.errors[0].message });
+        }
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
 
+// Login User Controller
 export const loginUser = async (req: Request, res: Response) => {
-    // Validate Request
-    const validateData = loginSchema.parse(req.body);
-    const { email, password } = validateData;
-
-    if (!email || !password) {
-        // Send Bad Request
-        return res.status(400).json({ message: "Invalid Credentials" });
-    }
-
     try {
-        // Check if User Exist
+        // Validate Request
+        const validateData = loginSchema.parse(req.body);
+        const { email, password } = validateData;
+
+        // Check if User Exists
         const user = await prisma.user.findUnique({
             where: {
                 email,
@@ -100,16 +99,16 @@ export const loginUser = async (req: Request, res: Response) => {
         });
         if (!user) {
             // Send Not Found
-            return res.status(404).json({ message: "User Not Found" });
+            return res.status(404).json({ message: "User not found" });
         }
 
         const passwordMatch = await compare(password, user.password);
         if (!passwordMatch) {
             // Send Unauthorized
-            res.status(401).json({ message: "Incorrect Password" });
+            return res.status(401).json({ message: "Incorrect password" });
         }
 
-        // Set Token in the Cookies
+        // Set Token in Cookies
         const token = generateJWT({ email, userName: user.userName });
         res.cookie("token", token, {
             httpOnly: true,
@@ -118,13 +117,15 @@ export const loginUser = async (req: Request, res: Response) => {
             path: "/",
         });
 
-        res.status(201).json({ token, message: "Login Successfully" });
+        res.status(201).json({ token, message: "Login successful" });
     } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ message: error.errors[0].message });
+        }
         console.error(error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
-
 export const logoutUser = async (req: Request, res: Response) => {
     res.clearCookie("token", {
         httpOnly: true,

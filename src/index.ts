@@ -26,9 +26,11 @@ interface SocketIdToEmailMap {
 }
 
 const socketIdToEmailMap: SocketIdToEmailMap = {};
-
+let users = 0;
 io.on("connection", (socket) => {
     console.log("A user connected");
+    users++;
+    io.emit("user count", users);
 
     // When a user sends their email
     socket.on("user email", (email) => {
@@ -41,6 +43,8 @@ io.on("connection", (socket) => {
 
     // When a user disconnects
     socket.on("disconnect", () => {
+        users--;
+        io.emit("user count", users);
         console.log(`User ${socketIdToEmailMap[socket.id]} disconnected`);
         delete socketIdToEmailMap[socket.id];
     });
